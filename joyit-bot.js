@@ -1,40 +1,153 @@
-// joyit-bot.js
-const puppeteer = require('puppeteer');
-const express = require('express');
+// joyit-app-bot.js
+const wdio = require('webdriverio');
+const INVITE_CODE = "vpBulEU";
 
-// YOUR JOYIT INVITE CODE - REPLACE WITH YOUR ACTUAL CODE
-const INVITE_CODE = 'vpBulEU';
-const JOYIT_URL = 'https://www.joyit.ai';
-const PORT = process.env.PORT || 3000;
+async function joyitAppBot() {
+    console.log("🤖 Joyit App AutoBot Starting...");
+    console.log(`🎫 Invite Code: ${INVITE_CODE}`);
+    
+    // Appium configuration for Android
+    const opts = {
+        port: 4723,
+        capabilities: {
+            platformName: "Android",
+            "appium:automationName": "UiAutomator2",
+            "appium:appPackage": "ai.joyit.app", // Adjust if different
+            "appium:appActivity": "ai.joyit.app.MainActivity", // Adjust if different
+            "appium:noReset": true,
+            "appium:newCommandTimeout": 300
+        }
+    };
 
-async function enterJoyitInviteCode() {
-  let browser;
-  try {
-    console.log('Starting Joyit invite code entry...');
-    console.log(`Using invite code: ${INVITE_CODE}`);
+    let client;
     
-    // Launch browser with appropriate settings
-    browser = await puppeteer.launch({
-      headless: true,
-      args: [
-        '--no-sandbox',
-        '--disable-setuid-sandbox',
-        '--disable-dev-shm-usage',
-        '--disable-gpu'
-      ]
-    });
+    try {
+        console.log("📱 Connecting to Appium...");
+        client = await wdio.remote(opts);
+        
+        console.log("⏳ Waiting for app to load...");
+        await client.pause(5000);
+        
+        // Try multiple strategies to find invite input
+        console.log("🔍 Looking for invite code input...");
+        
+        const elementStrategies = [
+            '//*[@resource-id="invite_code_input"]',
+            '//*[@resource-id="inviteCodeInput"]',
+            '//*[@content-desc="invite code input"]',
+            '//*[@text="Enter invite code"]',
+            '//android.widget.EditText',
+            '//*[@class="android.widget.EditText"]'
+        ];
+        
+        let inviteInput = null;
+        
+        for (const strategy of elementStrategies) {
+            try {
+                console.log(`Trying strategy: ${strategy}`);
+                inviteInput = await client.$(strategy);
+                const isDisplayed = await inviteInput.isDisplayed();
+                if (isDisplayed) {
+                    console.log("✅ Found invite input field!");
+                    break;
+                }
+            } catch (e) {
+                console.log(`Strategy failed: ${e.message}`);
+            }
+        }
+        
+        if (!inviteInput) {
+            // Try to find any text input field
+            console.log("🔍 Trying generic text input detection...");
+            const textFields = await client.$$('android.widget.EditText');
+            if (textFields.length > 0) {
+                inviteInput = textFields[0];
+                console.log("✅ Found text input field!");
+            }
+        }
+        
+        if (!inviteInput) {
+            throw new Error("Could not locate invite code input field");
+        }
+        
+        // Enter invite code
+        console.log("⌨️ Entering invite code...");
+        await inviteInput.click();
+        await inviteInput.setValue(INVITE_CODE);
+        
+        // Try to find submit button
+        console.log("🔍 Looking for submit button...");
+        
+        const buttonStrategies = [
+            '//*[@resource-id="submit_button"]',
+            '//*[@resource-id="submitButton"]',
+            '//*[@text="Submit"]',
+            '//*[@text="Enter"]',
+            '//*[@text="Continue"]',
+            '//android.widget.Button'
+        ];
+        
+        let submitButton = null;
+        
+        for (const strategy of buttonStrategies) {
+            try {
+                submitButton = await client.$(strategy);
+                const isDisplayed = await submitButton.isDisplayed();
+                if (isDisplayed) {
+                    console.log("✅ Found submit button!");
+                    break;
+                }
+            } catch (e) {
+                // Continue trying
+            }
+        }
+        
+        if (submitButton) {
+            console.log("🖱️ Clicking submit button...");
+            await submitButton.click();
+        } else {
+            // Try pressing Enter
+            console.log("↩️ Pressing Enter key...");
+            await client.keys(['Enter']);
+        }
+        
+        console.log("⏳ Waiting for response...");
+        await client.pause(5000);
+        
+        // Check for success/error messages
+        try {
+            const successElement = await client.$('//*[@text[contains(., "Success")] or @text[contains(., "Thank you")]]');
+            const isErrorDisplayed = await successElement.isDisplayed();
+            if (isErrorDisplayed) {
+                console.log("🎉 Invite code submitted successfully!");
+            }
+        } catch (e) {
+            console.log("✅ Code submitted. Please check app for confirmation.");
+        }
+        
+        console.log("🤖 Bot completed. Keeping app open for 30 seconds...");
+        await client.pause(30000);
+        
+    } catch (error) {
+        console.error("💥 Error:", error.message);
+        console.log("\n🔧 Setup Instructions:");
+        console.log("1. Install Appium: npm install -g appium");
+        console.log("2. Install WebDriverIO: npm install webdriverio");
+        console.log("3. Start Appium server: appium");
+        console.log("4. Connect your Android device with USB debugging enabled");
+        console.log("5. Run: node joyit-app-bot.js");
+    } finally {
+        if (client) {
+            try {
+                await client.deleteSession();
+            } catch (e) {
+                // Ignore cleanup errors
+            }
+        }
+    }
+}
 
-    const page = await browser.newPage();
-    await page.setUserAgent('Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/119.0.0.0 Mobile Safari/537.36');
-    
-    // Navigate to Joyit homepage
-    console.log(`Navigating to ${JOYIT_URL}`);
-    await page.goto(JOYIT_URL, { waitUntil: 'networkidle2', timeout: 60000 });
-    
-    // Try multiple selectors for invite input
-    const inviteInputSelectors = [
-      'input[name="inviteCode"]',
-      'input[id*="invite"]',
+joyitAppBot();      'input[id*="invite"]',
       'input[placeholder*="invite"]',
       'input[placeholder*="code"]',
       '#invite-code',
