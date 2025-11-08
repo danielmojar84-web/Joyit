@@ -2,7 +2,7 @@
   "name": "joyit-app-bot",
   "version": "1.0.0",
   "description": "AutoBot for Joyit app invite code",
-  "main": "joyit-app-bot.js",
+  "main": "joyit-bot.js",
   "scripts": {
     "start": "node joyit-bot.js"
   },
