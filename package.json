@@ -1,17 +1,12 @@
 {
-  "name": "joyit-invite-bot",
+  "name": "joyit-app-bot",
   "version": "1.0.0",
-  "description": "Automated bot to enter Joyit invite codes",
-  "main": "joyit-bot.js",
+  "description": "AutoBot for Joyit app invite code",
+  "main": "joyit-app-bot.js",
   "scripts": {
-    "start": "node joyit-bot.js",
-    "dev": "node joyit-bot.js"
+    "start": "node joyit-bot.js"
   },
   "dependencies": {
-    "express": "^4.18.2",
-    "puppeteer": "^21.4.1"
-  },
-  "engines": {
-    "node": ">=16.x"
+    "webdriverio": "^8.20.0"
   }
 }
