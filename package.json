@@ -1,0 +1,17 @@
+{
+  "name": "joyit-invite-bot",
+  "version": "1.0.0",
+  "description": "Automated bot to enter Joyit invite codes",
+  "main": "joyit-bot.js",
+  "scripts": {
+    "start": "node joyit-bot.js",
+    "dev": "node joyit-bot.js"
+  },
+  "dependencies": {
+    "express": "^4.18.2",
+    "puppeteer": "^21.4.1"
+  },
+  "engines": {
+    "node": ">=16.x"
+  }
+}
